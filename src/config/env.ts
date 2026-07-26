@@ -3,15 +3,25 @@ import { z } from "zod";
 
 dotenv.config();
 
+const isTest = process.env.NODE_ENV === "test";
+
 const envSchema = z.object({
   PORT: z.string().default("5000"),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-  UPSTASH_REDIS_REST_URL: z.string().url("Invalid Upstash Redis REST URL"),
+  UPSTASH_REDIS_REST_URL: z
+    .string()
+    .default(isTest ? "https://mock-redis.upstash.io" : "")
+    .refine((val) => val.startsWith("http://") || val.startsWith("https://"), {
+      message: "Invalid Upstash Redis REST URL",
+    }),
   UPSTASH_REDIS_REST_TOKEN: z
     .string()
-    .min(1, "Upstash Redis Token is required"),
+    .default(isTest ? "mock-token-for-tests" : "")
+    .refine((val) => val.length > 0, {
+      message: "Upstash Redis Token is required",
+    }),
   CACHE_TTL_SECONDS: z
     .string()
     .transform((val) => parseInt(val, 10))
