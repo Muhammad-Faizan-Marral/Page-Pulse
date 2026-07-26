@@ -24,13 +24,15 @@ export class AuditService {
     const controller = new AbortController();
     const timeoutId = setTimeout(
       () => controller.abort(),
-      this.DEFAULT_TIMEOUT_MS,
+      this.DEFAULT_TIMEOUT_MS
     );
 
     try {
       const response = await axios.get(targetUrl, {
         signal: controller.signal,
-        headers: {"User-Agent": "PagePulse-AuditBot/1.0 (+https://digitalheroesco.com)",
+        headers: {
+          "User-Agent":
+            "PagePulse-AuditBot/1.0 (+https://digitalheroesco.com)",
           Accept:
             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
@@ -52,20 +54,26 @@ export class AuditService {
         null;
       const h1 = $("h1").first().text().trim() || null;
 
-      const contentLengthHeader = response.headers["content-length"];
-      const contentLengthBytes = contentLengthHeader
+      // Safely extract & convert headers to String
+      const rawContentType = response.headers["content-type"];
+      const contentType = rawContentType ? String(rawContentType) : null;
+
+      const rawContentLength = response.headers["content-length"];
+      const contentLengthHeader = rawContentLength ? String(rawContentLength) : null;
+
+      const parsedLength = contentLengthHeader
         ? parseInt(contentLengthHeader, 10)
         : Buffer.byteLength(html);
+
+      const contentLengthBytes = isNaN(parsedLength) ? null : parsedLength;
 
       return {
         url: targetUrl,
         statusCode: response.status,
         statusText: response.statusText || "OK",
         responseTimeMs,
-        contentType: (response.headers["content-type"] as string) || null,
-        contentLengthBytes: isNaN(contentLengthBytes)
-          ? null
-          : contentLengthBytes,
+        contentType,
+        contentLengthBytes,
         meta: {
           title,
           description,
@@ -82,7 +90,7 @@ export class AuditService {
         error.code === "ECONNABORTED"
       ) {
         const customError: any = new Error(
-          `Request timed out after ${this.DEFAULT_TIMEOUT_MS}ms`,
+          `Request timed out after ${this.DEFAULT_TIMEOUT_MS}ms`
         );
         customError.statusCode = 504;
         customError.code = "GATEWAY_TIMEOUT";
@@ -91,7 +99,7 @@ export class AuditService {
 
       if (error.code === "ENOTFOUND" || error.code === "EAI_AGAIN") {
         const customError: any = new Error(
-          "Could not resolve host domain. Please check the URL.",
+          "Could not resolve host domain. Please check the URL."
         );
         customError.statusCode = 400;
         customError.code = "DNS_LOOKUP_FAILED";
@@ -99,7 +107,7 @@ export class AuditService {
       }
 
       const customError: any = new Error(
-        error.message || "Failed to perform URL audit",
+        error.message || "Failed to perform URL audit"
       );
       customError.statusCode = 502;
       customError.code = "BAD_GATEWAY";
