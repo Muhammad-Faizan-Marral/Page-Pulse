@@ -15,15 +15,15 @@ const envSchema = z.object({
   CACHE_TTL_SECONDS: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .default("300"),
+    .default(300),
   RATE_LIMIT_MAX_REQUESTS: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .default("100"),
+    .default(100),
   RATE_LIMIT_WINDOW_MS: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .default("900000"),
+    .default(900000),
 });
 
 const parsed = envSchema.safeParse(process.env);
