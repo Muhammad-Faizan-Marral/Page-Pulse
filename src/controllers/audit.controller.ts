@@ -12,22 +12,30 @@ export class AuditController {
   ): Promise<void> {
     try {
       const { url } = req.body;
+      const startTime = performance.now(); 
 
       // 1. Check Redis Cache
       const cachedResult = await CacheService.get(url);
 
       if (cachedResult) {
+        const endTime = performance.now();
+        const cacheResponseTimeMs = Math.round(endTime - startTime);
+
         logger.info({
           requestId: req.id,
           action: 'AUDIT_CACHE_HIT',
           targetUrl: url,
+          cacheLatencyMs: cacheResponseTimeMs,
         });
 
         res.status(200).json({
           status: 'success',
           cached: true,
           requestId: req.id,
-          data: cachedResult,
+          data: {
+            ...cachedResult,
+            cacheLatencyMs: cacheResponseTimeMs,
+          },
         });
         return;
       }
